@@ -1,4 +1,3 @@
-﻿
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -11,126 +10,217 @@ using WebSocketSharp.Server;
 namespace Interaction_Interactors_101
 {
     /// <summary>
-    /// Interactor is a region on the screen for which some gaze based behavior is defined.
-    /// Most common behaviors the Tobii Core SDK is exposing for interactors is gaze aware
-    /// (simply a notion of whether somebody is looking at the region or not), activatable
-    /// (which means region has some action associated with it, which can be triggered, but
-    /// only if someone is looking at it at the same time), pannable (provides panning like
-    /// behavior with associated actions, which can be triggered, but again only if someone
-    /// is looking at it at the same time). 
-    /// 
-    /// To help you manage interactors, the Tobii Core SDK provides another concept - InteractorAgents.
-    /// When you do not work with WPF or WindowsForms, the Tobii Core SDK has UnboundInteractorAgent,
-    /// which you can use to control everything related to interactors.
-    /// 
-    /// Gaze aware is the most basic behavior we could think of, so let's see how its easy to
-    /// define 'you are looking at it' interactor with the Tobii Core SDK.
+    /// GARB Eye Tracker WebSocket Server
+    /// Connects to Tobii eye tracker and streams gaze data to browser extensions.
     /// </summary>
     public class Program
     {
         public class Laputa : WebSocketBehavior
         {
             FixationDataStream fixationDataStream;
+            GazePointDataStream gazePointDataStream;
             Host host;
             double fixationBeginTime;
             bool receivedEndFixation = true;
 
+            // Set to true for smoother gaze tracking (more updates, like Tobii's preview trail)
+            // Set to false for fixation-based tracking (fewer updates, only when eyes rest)
+            // Change this value to switch between gaze point and fixation modes
+            private static readonly bool USE_GAZE_POINT_STREAM = true;
+
             protected override void OnMessage(MessageEventArgs e)
             {
-                //string path = @"/Users/Kathryn Faolin/Documents/thesis/data.txt";
-                ////string path = @"/Users/tim/Documents/data.txt";
-                ////System.IO.File.AppendAllText(path, e.Data + Environment.NewLine);
-                //if (e.Data == "pandas")
-                //{
-                //    System.IO.File.WriteAllText(path, e.Data);
-                //}
-                //Send(e.Data);
+                // Handle messages from the extension if needed
+                Console.WriteLine("Received from extension: " + e.Data);
             }
 
+            private void SafeSend(string message)
+            {
+                try
+                {
+                    if (State == WebSocketState.Open)
+                    {
+                        Send(message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error sending message: " + ex.Message);
+                }
+            }
+
+            // Handler for raw gaze point data (smoother, more frequent updates)
+            private void handleGazePoint(object sender, StreamData<GazePointData> gazePoint)
+            {
+                var x = gazePoint.Data.X;
+                var y = gazePoint.Data.Y;
+
+                // Skip invalid data (NaN values occur when eyes are not detected)
+                if (double.IsNaN(x) || double.IsNaN(y))
+                    return;
+
+                // Send gaze data - this is like Tobii's preview trail
+                string gazeString = string.Format("gaze|{0}|{1}", x, y);
+                SafeSend(gazeString);
+            }
+
+            // Handler for fixation data (filtered, only when eyes rest on something)
             private void handleFixation(object sender, StreamData<FixationData> fixation)
             {
-                // On the Next event, data comes as FixationData objects, wrapped in a StreamData<T> object.
                 var fixationPointX = fixation.Data.X;
                 var fixationPointY = fixation.Data.Y;
+
+                // Skip invalid data
+                if (double.IsNaN(fixationPointX) || double.IsNaN(fixationPointY))
+                    return;
 
                 switch (fixation.Data.EventType)
                 {
                     case FixationDataEventType.Begin:
-
-                        // Check to see if an end-fixation message was sent
-                        if (!receivedEndFixation) {
-                            string fixString = string.Format("duration|{0}|null",
+                        if (!receivedEndFixation)
+                        {
+                            string durationString = string.Format("duration|{0}|null",
                             fixationBeginTime > 0
                                 ? TimeSpan.FromMilliseconds(fixation.Data.Timestamp - fixationBeginTime)
                                 : TimeSpan.Zero);
                             receivedEndFixation = true;
-                            Send(fixString);
+                            SafeSend(durationString);
                         }
 
                         fixationBeginTime = fixation.Data.Timestamp;
                         string beginString = string.Format("begin|{0}|{1}", fixationPointX, fixationPointY);
                         receivedEndFixation = false;
-                        Send(beginString);
-                        //Console.WriteLine(beginString);
+                        SafeSend(beginString);
                         break;
 
                     case FixationDataEventType.Data:
                         string duringString = string.Format("during|{0}|{1}", fixationPointX, fixationPointY);
-                        Send(duringString);
+                        SafeSend(duringString);
                         break;
 
                     case FixationDataEventType.End:
                         string endString = string.Format("end|{0}|{1}", fixationPointX, fixationPointY);
-                        Send(endString);
-                        string fixString = string.Format("duration|{0}|null",
+                        SafeSend(endString);
+                        string durationStringEnd = string.Format("duration|{0}|null",
                             fixationBeginTime > 0
                                 ? TimeSpan.FromMilliseconds(fixation.Data.Timestamp - fixationBeginTime)
                                 : TimeSpan.Zero);
                         receivedEndFixation = true;
-                        Send(fixString);
+                        SafeSend(durationStringEnd);
                         break;
 
                     default:
-                        throw new InvalidOperationException("Unknown fixation event type, which doesn't have explicit handling.");
+                        Console.WriteLine("Unknown fixation event type: " + fixation.Data.EventType);
+                        break;
                 }
-
             }
+
 
             protected override void OnOpen()
             {
-                // Everything starts with initializing Host, which manages the connection to the 
-                // Tobii Engine and provides all the Tobii Core SDK functionality.
-                // NOTE: Make sure that Tobii.EyeX.exe is running
-                host = new Host();
-             
-                // Initialize Fixation data stream.
-                fixationDataStream = host.Streams.CreateFixationDataStream();
+                Console.WriteLine("WebSocket client connected at " + DateTime.Now);
 
-                // Because timestamp of fixation events is relative to the previous ones
-                // only, we will store them in this variable.
-                fixationBeginTime = 0d;
-                
-                Console.WriteLine(string.Format("stream opened at {0}", DateTime.Now));
-                fixationDataStream.Next += handleFixation;
+                try
+                {
+                    // Everything starts with initializing Host, which manages the connection to the
+                    // Tobii Engine and provides all the Tobii Core SDK functionality.
+                    // NOTE: Make sure Tobii Experience app is running
+                    host = new Host();
 
+                    if (USE_GAZE_POINT_STREAM)
+                    {
+                        // Use GazePointDataStream for smoother tracking (like Tobii's preview trail)
+                        gazePointDataStream = host.Streams.CreateGazePointDataStream();
+                        gazePointDataStream.Next += handleGazePoint;
+                        Console.WriteLine("Gaze point stream opened at " + DateTime.Now + " (smooth mode)");
+                    }
+                    else
+                    {
+                        // Use FixationDataStream for filtered tracking (only when eyes fixate)
+                        fixationDataStream = host.Streams.CreateFixationDataStream();
+                        fixationBeginTime = 0d;
+                        fixationDataStream.Next += handleFixation;
+                        Console.WriteLine("Fixation stream opened at " + DateTime.Now + " (fixation mode)");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("ERROR: Failed to connect to Tobii eye tracker!");
+                    Console.WriteLine("Make sure:");
+                    Console.WriteLine("  1. Tobii Eye Tracker is connected via USB");
+                    Console.WriteLine("  2. Tobii Experience (or Tobii Core) software is running");
+                    Console.WriteLine("  3. Eye tracker is calibrated");
+                    Console.WriteLine("Error details: " + ex.Message);
+
+                    // Send error to client
+                    SafeSend("error|Tobii eye tracker not available");
+                }
             }
 
             protected override void OnClose(CloseEventArgs e)
             {
+                Console.WriteLine("WebSocket client disconnected at " + DateTime.Now);
+
+                try
+                {
+                    if (gazePointDataStream != null)
+                    {
+                        gazePointDataStream.Next -= handleGazePoint;
+                        gazePointDataStream = null;
+                    }
+                    if (fixationDataStream != null)
+                    {
+                        fixationDataStream.Next -= handleFixation;
+                        fixationDataStream = null;
+                    }
+                    if (host != null)
+                    {
+                        host.DisableConnection();
+                        host = null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error during cleanup: " + ex.Message);
+                }
+
                 base.OnClose(e);
-                Console.WriteLine(string.Format("stream closed at {0}", DateTime.Now));
-                fixationDataStream.Next -= handleFixation;
+            }
+
+            protected override void OnError(ErrorEventArgs e)
+            {
+                Console.WriteLine("WebSocket error: " + e.Message);
+                base.OnError(e);
             }
         }
 
         public static void Main(string[] args)
         {
             PrintSampleIntroText();
-            var wssv = new WebSocketServer("ws://localhost:8765");
-            wssv.AddWebSocketService<Laputa>("/hello");
-            wssv.Start();
-            Console.ReadKey(true);
-            wssv.Stop();
+
+            WebSocketServer wssv = null;
+            try
+            {
+                wssv = new WebSocketServer("ws://localhost:8765");
+                wssv.AddWebSocketService<Laputa>("/hello");
+                wssv.Start();
+
+                Console.WriteLine("Press any key to stop the server...");
+                Console.ReadKey(true);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR starting server: " + ex.Message);
+                Console.WriteLine("Port 8765 may already be in use.");
+            }
+            finally
+            {
+                if (wssv != null && wssv.IsListening)
+                {
+                    wssv.Stop();
+                    Console.WriteLine("Server stopped.");
+                }
+            }
 
             /*
             // Everything starts with initializing Host, which manages the connection to the 
