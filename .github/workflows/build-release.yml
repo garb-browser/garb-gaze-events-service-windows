@@ -27,14 +27,31 @@ jobs:
       run: nuget restore WindowsEyeServer.sln
 
     - name: Build Release
-      run: msbuild WindowsEyeServer.sln /p:Configuration=Release /p:Platform="Any CPU"
+      run: msbuild WindowsEyeServer.sln /p:Configuration=Release /p:Platform="Any CPU" /v:minimal
+
+    - name: List build output
+      shell: cmd
+      run: |
+        echo === bin\Release contents ===
+        dir bin\Release /B 2>nul || echo bin\Release not found
+        echo === bin\Debug contents ===
+        dir bin\Debug /B 2>nul || echo bin\Debug not found
 
     - name: Create Release Package
       shell: cmd
       run: |
         mkdir release-package
-        xcopy /E /I /Y bin\Release\* release-package\
-        if exist "packages\Tobii.Interaction.0.7.1\build\x64\Tobii.EyeX.Client.dll" copy /Y "packages\Tobii.Interaction.0.7.1\build\x64\Tobii.EyeX.Client.dll" release-package\
+        if exist "bin\Release\GARB-Eye-Tracker.exe" (
+          xcopy /E /I /Y bin\Release\* release-package\
+        ) else if exist "bin\Debug\GARB-Eye-Tracker.exe" (
+          echo Warning: Using Debug build
+          xcopy /E /I /Y bin\Debug\* release-package\
+        ) else (
+          echo ERROR: No build output found!
+          exit /b 1
+        )
+        echo === Release package contents ===
+        dir release-package /B
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
