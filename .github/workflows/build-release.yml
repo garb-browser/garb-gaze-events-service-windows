@@ -41,15 +41,7 @@ jobs:
       shell: cmd
       run: |
         mkdir release-package
-        if exist "bin\Release\GARB-Eye-Tracker.exe" (
-          xcopy /E /I /Y bin\Release\* release-package\
-        ) else if exist "bin\Debug\GARB-Eye-Tracker.exe" (
-          echo Warning: Using Debug build
-          xcopy /E /I /Y bin\Debug\* release-package\
-        ) else (
-          echo ERROR: No build output found!
-          exit /b 1
-        )
+        xcopy /E /I /Y bin\Release\* release-package\
         echo === Release package contents ===
         dir release-package /B
 
