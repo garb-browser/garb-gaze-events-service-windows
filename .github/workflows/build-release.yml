@@ -30,9 +30,10 @@ jobs:
       run: msbuild WindowsEyeServer.sln /p:Configuration=Release /p:Platform="Any CPU"
 
     - name: Create Release Package
+      shell: cmd
       run: |
         mkdir release-package
-        xcopy /E /I bin\Release\* release-package\
+        xcopy /E /I /Y bin\Release\* release-package\
         if exist "packages\Tobii.Interaction.0.7.1\build\x64\Tobii.EyeX.Client.dll" copy /Y "packages\Tobii.Interaction.0.7.1\build\x64\Tobii.EyeX.Client.dll" release-package\
 
     - name: Upload Build Artifact
