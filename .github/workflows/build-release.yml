@@ -33,9 +33,8 @@ jobs:
       shell: cmd
       run: |
         echo === bin\Release contents ===
-        dir bin\Release /B 2>nul || echo bin\Release not found
-        echo === bin\Debug contents ===
-        dir bin\Debug /B 2>nul || echo bin\Debug not found
+        dir bin\Release /B
+        echo.
 
     - name: Create Release Package
       shell: cmd
