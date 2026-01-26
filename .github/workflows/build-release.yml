@@ -1,0 +1,68 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [garb-christian, main]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [garb-christian, main]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
+
+    - name: Restore NuGet packages
+      run: nuget restore WindowsEyeServer.sln
+
+    - name: Build Release
+      run: msbuild WindowsEyeServer.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+    - name: Create Release Package
+      run: |
+        mkdir release-package
+        xcopy /E /I bin\Release\* release-package\
+        if exist "packages\Tobii.Interaction.0.7.1\build\x64\Tobii.EyeX.Client.dll" copy /Y "packages\Tobii.Interaction.0.7.1\build\x64\Tobii.EyeX.Client.dll" release-package\
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GARB-Eye-Tracking-Service
+        path: release-package/
+        retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: GARB-Eye-Tracking-Service
+        path: release-package
+
+    - name: Create ZIP
+      run: |
+        cd release-package
+        zip -r ../GARB-Eye-Tracking-Service-${{ github.ref_name }}.zip .
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: GARB-Eye-Tracking-Service-${{ github.ref_name }}.zip
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

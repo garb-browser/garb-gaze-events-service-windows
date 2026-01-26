@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Interaction_Interactors_101</RootNamespace>
-    <AssemblyName>Interaction_Interactors_101</AssemblyName>
+    <AssemblyName>GARB-Eye-Tracker</AssemblyName>
     <!-- <TargetFramework>netcoreapp2.2</TargetFramework> Added by Julian -->
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
