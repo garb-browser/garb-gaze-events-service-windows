@@ -111,11 +111,11 @@
     <!-- Note: These managed DLLs work fine from NuGet. Only the native DLL (Tobii.EyeX.Client.dll)
          has Windows 11 compatibility issues and uses Tobii Experience installation when available. -->
     <Reference Include="Tobii.Interaction.Model">
-      <HintPath>.\packages\Tobii.Interaction.0.7.1\lib\Tobii.Interaction.Model.dll</HintPath>
+      <HintPath>.\packages\Tobii.Interaction.0.7.1\lib\net45\Tobii.Interaction.Model.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Tobii.Interaction.Net">
-      <HintPath>.\packages\Tobii.Interaction.0.7.1\lib\Tobii.Interaction.Net.dll</HintPath>
+      <HintPath>.\packages\Tobii.Interaction.0.7.1\lib\net45\Tobii.Interaction.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <!-- WebSocket Sharp -->
