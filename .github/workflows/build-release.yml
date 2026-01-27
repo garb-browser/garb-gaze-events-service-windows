@@ -26,21 +26,21 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore WindowsEyeServer.sln
 
-    - name: Build Release
-      run: msbuild WindowsEyeServer.sln /p:Configuration=Release /p:Platform="Any CPU" /v:minimal
+    - name: Build x64 Release
+      run: msbuild WindowsEyeServer.sln /p:Configuration=Release /p:Platform=x64 /v:minimal
 
     - name: List build output
       shell: cmd
       run: |
-        echo === bin\Release contents ===
-        dir bin\Release /B
+        echo === bin\x64\Release contents ===
+        dir bin\x64\Release /B
         echo.
 
     - name: Create Release Package
       shell: cmd
       run: |
         mkdir release-package
-        xcopy /E /I /Y bin\Release\* release-package\
+        xcopy /E /I /Y bin\x64\Release\* release-package\
         echo === Release package contents ===
         dir release-package /B
 
