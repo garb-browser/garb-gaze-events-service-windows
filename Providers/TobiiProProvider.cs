@@ -19,11 +19,10 @@ namespace Interaction_Interactors_101.Providers
     /// </summary>
     public class TobiiProProvider : IGazeProvider
     {
-        // DPI imports for proper coordinate scaling
         [DllImport("gdi32.dll")]
         private static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+
         private const int LOGPIXELSX = 88;
-        private const int LOGPIXELSY = 90;
 
         // Y-axis offset to compensate for calibration differences (negative = move UP, positive = move DOWN)
         // This is in LOGICAL pixels (after DPI scaling)
@@ -219,7 +218,7 @@ namespace Interaction_Interactors_101.Providers
 
                     var selectedScreen = GetTobiiCalibratedScreen();
                     Console.WriteLine($"[Pro] Using screen for Tobii: {selectedScreen.Bounds.Width}x{selectedScreen.Bounds.Height} at ({selectedScreen.Bounds.X},{selectedScreen.Bounds.Y})");
-                    Console.WriteLine($"[Pro] DPI scale: {GetDpiScale():F2}x");
+                    Console.WriteLine($"[Pro] DPI scale: {GetDpiScale():F2}");
                     _firstEventLogged = true;
                 }
 
@@ -267,12 +266,10 @@ namespace Interaction_Interactors_101.Providers
                 // Convert normalized coordinates (0-1) to screen pixels
                 // Use the screen where Tobii is calibrated (not necessarily primary)
                 var screenBounds = GetTobiiCalibratedScreen().Bounds;
-                double dpiScale = GetDpiScale();
 
-                // Convert to desktop coordinates:
-                // 1. Multiply normalized by screen dimensions to get screen-relative coords
-                // 2. Add screen offset (X, Y) to get absolute desktop coords
-                // 3. Divide by DPI scale for logical pixels
+                // Convert normalized coordinates to absolute desktop coordinates
+                // then divide by DPI scale to get CSS/logical pixels
+                double dpiScale = GetDpiScale();
                 double screenX = (gazeX * screenBounds.Width + screenBounds.X) / dpiScale;
                 double screenY = (gazeY * screenBounds.Height + screenBounds.Y) / dpiScale + Y_OFFSET_PIXELS;
 
@@ -341,7 +338,8 @@ namespace Interaction_Interactors_101.Providers
         }
 
         /// <summary>
-        /// Get the current DPI scaling factor (1.0 = 100%, 1.5 = 150%, 2.0 = 200%)
+        /// Get the system DPI scaling factor.
+        /// Returns 1.0 for 100%, 1.25 for 125%, 1.5 for 150%, etc.
         /// </summary>
         private double GetDpiScale()
         {
@@ -350,21 +348,13 @@ namespace Interaction_Interactors_101.Providers
                 using (Graphics g = Graphics.FromHwnd(IntPtr.Zero))
                 {
                     IntPtr hdc = g.GetHdc();
-                    try
-                    {
-                        int dpiX = GetDeviceCaps(hdc, LOGPIXELSX);
-                        // Standard DPI is 96, so scale = dpiX / 96
-                        return dpiX / 96.0;
-                    }
-                    finally
-                    {
-                        g.ReleaseHdc(hdc);
-                    }
+                    int dpi = GetDeviceCaps(hdc, LOGPIXELSX);
+                    g.ReleaseHdc(hdc);
+                    return dpi / 96.0;
                 }
             }
             catch
             {
-                // Default to 1.0 if we can't get DPI
                 return 1.0;
             }
         }

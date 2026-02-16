@@ -115,7 +115,8 @@ namespace Interaction_Interactors_101.Providers
         }
 
         /// <summary>
-        /// Handle incoming gaze point data from the Consumer SDK
+        /// Handle incoming gaze point data from the Consumer SDK.
+        /// Sends raw screen coordinates - DPR conversion is handled in JavaScript.
         /// </summary>
         private void OnGazePoint(object sender, StreamData<GazePointData> data)
         {
@@ -125,13 +126,12 @@ namespace Interaction_Interactors_101.Providers
                 return;
             }
 
-            // Fire event with Consumer data (no extended Pro fields)
+            // Send raw coordinates - JavaScript divides by window.devicePixelRatio
             GazeDataReceived?.Invoke(this, new GarbGazeEventArgs
             {
                 X = data.Data.X,
                 Y = data.Data.Y,
                 Timestamp = data.Data.Timestamp,
-                // Consumer SDK does not provide extended data - leave as null
                 PupilLeftDiameter = null,
                 PupilRightDiameter = null,
                 GazeOriginLeftX = null,
