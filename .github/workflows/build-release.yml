@@ -2,12 +2,12 @@ name: Build and Release
 
 on:
   push:
-    branches: [garb-christian, main]
+    branches: [garb-christian, master, main]
     tags:
       - 'v*'
   pull_request:
-    branches: [garb-christian, main]
-  workflow_dispatch:  # Allow manual trigger
+    branches: [garb-christian, master, main]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -29,26 +29,41 @@ jobs:
     - name: Build x64 Release
       run: msbuild WindowsEyeServer.sln /p:Configuration=Release /p:Platform=x64 /v:minimal
 
-    - name: List build output
-      shell: cmd
-      run: |
-        echo === bin\x64\Release contents ===
-        dir bin\x64\Release /B
-        echo.
-
     - name: Create Release Package
       shell: cmd
       run: |
         mkdir release-package
         xcopy /E /I /Y bin\x64\Release\* release-package\
-        echo === Release package contents ===
-        dir release-package /B
+        if exist packages\Tobii.Interaction.0.7.1\build\x64\Tobii.EyeX.Client.dll (
+          copy /Y packages\Tobii.Interaction.0.7.1\build\x64\Tobii.EyeX.Client.dll release-package\
+        )
 
-    - name: Upload Build Artifact
+    - name: Install Inno Setup
+      run: choco install innosetup -y --no-progress
+
+    - name: Prepare installer source
+      shell: cmd
+      run: |
+        mkdir installer\publish
+        xcopy /E /I /Y release-package\* installer\publish\
+
+    - name: Compile Installer
+      shell: cmd
+      run: |
+        "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\garb-installer.iss
+
+    - name: Upload Build Artifact (ZIP)
       uses: actions/upload-artifact@v4
       with:
         name: GARB-Eye-Tracking-Service
         path: release-package/
+        retention-days: 30
+
+    - name: Upload Installer Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GARB-Eye-Tracking-Service-Installer
+        path: installer/output/GARB-Eye-Tracking-Service-Setup.exe
         retention-days: 30
 
   release:
@@ -57,11 +72,17 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-    - name: Download artifact
+    - name: Download ZIP artifact
       uses: actions/download-artifact@v4
       with:
         name: GARB-Eye-Tracking-Service
         path: release-package
+
+    - name: Download Installer artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: GARB-Eye-Tracking-Service-Installer
+        path: installer-output
 
     - name: Create ZIP
       run: |
@@ -71,7 +92,9 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        files: GARB-Eye-Tracking-Service-${{ github.ref_name }}.zip
+        files: |
+          GARB-Eye-Tracking-Service-${{ github.ref_name }}.zip
+          installer-output/GARB-Eye-Tracking-Service-Setup.exe
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
