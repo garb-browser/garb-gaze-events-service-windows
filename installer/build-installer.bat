@@ -4,7 +4,8 @@ echo GARB Eye Tracking Service - Full Build + Installer
 echo ================================================
 echo.
 
-set GARB_ROOT=C:\Users\chris\OneDrive\Documents\Garb\garb-gaze-events-service-windows
+REM Derive repo root from this script's location (installer/ is one level deep)
+set GARB_ROOT=%~dp0..
 set INSTALLER_DIR=%~dp0
 
 REM Step 1: Build the project

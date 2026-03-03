@@ -7,7 +7,7 @@
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "GARB Browser"
 #define MyAppURL "https://github.com/garb-browser"
-#define MyAppExeName "Interaction_Interactors_101.exe"
+#define MyAppExeName "GARB-Eye-Tracker.exe"
 
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
