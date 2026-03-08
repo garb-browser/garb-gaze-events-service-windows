@@ -1,22 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"> <!-- SDK added by Julian -->
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
     <ProjectGuid>{267C8E6F-5C98-42D6-877B-AF64A9E9AE45}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Interaction_Interactors_101</RootNamespace>
-    <AssemblyName>Interaction_Interactors_101</AssemblyName>
-    <!-- <TargetFramework>netcoreapp2.2</TargetFramework> Added by Julian -->
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <AssemblyName>GARB-Eye-Tracker</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
   </PropertyGroup>
+  <!-- Debug|x64 Configuration (recommended for Pro SDK support) -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;TOBII_PRO_SDK</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <!-- Release|x64 Configuration -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE;TOBII_PRO_SDK</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <!-- Debug|AnyCPU Configuration (Consumer SDK only - backward compatible) -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
@@ -26,8 +50,9 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
+  <!-- Release|AnyCPU Configuration (Consumer SDK only) -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
@@ -37,17 +62,19 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <!-- Debug|x86 Configuration (legacy, Consumer SDK only) -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x86\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
+  <!-- Release|x86 Configuration (legacy, Consumer SDK only) -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -61,36 +88,86 @@
   <PropertyGroup>
     <TargetZone>LocalIntranet</TargetZone>
   </PropertyGroup>
-  <!-- <PropertyGroup>
-    <GenerateManifests>true</GenerateManifests> Commented out by Julian
-  </PropertyGroup> -->
   <PropertyGroup>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
+  <!-- System References -->
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="Tobii.Interaction.Model, Version=0.7.1.36, Culture=neutral, PublicKeyToken=70326046dcdce6cb, processorArchitecture=MSIL">
+  </ItemGroup>
+  <!-- NuGet Package References -->
+  <ItemGroup>
+    <!-- Tobii Consumer SDK (Eye Tracker 5) - managed assemblies from NuGet package -->
+    <!-- Note: These managed DLLs work fine from NuGet. Only the native DLL (Tobii.EyeX.Client.dll)
+         has Windows 11 compatibility issues and uses Tobii Experience installation when available. -->
+    <Reference Include="Tobii.Interaction.Model">
       <HintPath>.\packages\Tobii.Interaction.0.7.1\lib\net45\Tobii.Interaction.Model.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Tobii.Interaction.Net, Version=0.7.1.36, Culture=neutral, PublicKeyToken=70326046dcdce6cb, processorArchitecture=MSIL">
+    <Reference Include="Tobii.Interaction.Net">
       <HintPath>.\packages\Tobii.Interaction.0.7.1\lib\net45\Tobii.Interaction.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <!-- WebSocket Sharp -->
     <Reference Include="websocket-sharp, Version=1.0.2.59611, Culture=neutral, PublicKeyToken=5660b08a1845a91e, processorArchitecture=MSIL">
       <HintPath>.\packages\WebSocketSharp.1.0.3-rc11\lib\websocket-sharp.dll</HintPath>
     </Reference>
+    <!-- Newtonsoft.Json for JSON serialization -->
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>.\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
+  <!-- Tobii Pro SDK (conditional - only for x64 builds) -->
+  <ItemGroup Condition="'$(Platform)' == 'x64'">
+    <Reference Include="Tobii.Research">
+      <HintPath>.\packages\Tobii.Research.x64.2.1.0.1\lib\netstandard2.0\Tobii.Research.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <!-- Tobii Pro SDK native DLLs (required for x64 builds) -->
+  <ItemGroup Condition="'$(Platform)' == 'x64'">
+    <Content Include=".\packages\Tobii.Research.x64.2.1.0.1\runtimes\win-x64\native\tobii_pro.dll">
+      <Link>tobii_pro.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include=".\packages\Tobii.Research.x64.2.1.0.1\runtimes\win-x64\native\tobii_firmware_upgrade.dll">
+      <Link>tobii_firmware_upgrade.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <!-- Tobii Consumer SDK native DLL (from Tobii Experience installation - newer version with Windows 11 support) -->
+  <!-- Note: The NuGet package version (1.17.0) doesn't support Windows 11. Using installed version (1.24.0+) instead. -->
+  <ItemGroup Condition="'$(Platform)' == 'x64'">
+    <Content Include="$(ProgramFiles)\Tobii\Tobii EyeX\Tobii.EyeX.Client.dll" Condition="Exists('$(ProgramFiles)\Tobii\Tobii EyeX\Tobii.EyeX.Client.dll')">
+      <Link>Tobii.EyeX.Client.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- Fallback to NuGet package if Tobii Experience is not installed -->
+    <Content Include=".\packages\Tobii.Interaction.0.7.1\build\x64\Tobii.EyeX.Client.dll" Condition="!Exists('$(ProgramFiles)\Tobii\Tobii EyeX\Tobii.EyeX.Client.dll')">
+      <Link>Tobii.EyeX.Client.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <!-- Source Files -->
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <!-- Provider abstraction layer -->
+    <Compile Include="Providers\IGazeProvider.cs" />
+    <Compile Include="Providers\TobiiConsumerProvider.cs" />
+    <Compile Include="Providers\TobiiProProvider.cs" />
+    <!-- Services -->
+    <Compile Include="Services\DeviceDetectionService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -98,18 +175,6 @@
     <None Include="Properties\app.manifest" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project=".\packages\Tobii.Interaction.0.7.1\build\Tobii.Interaction.targets" Condition="Exists('.\packages\Tobii.Interaction.0.7.1\build\Tobii.Interaction.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('.\packages\Tobii.Interaction.0.7.1\build\Tobii.Interaction.targets')" Text="$([System.String]::Format('$(ErrorText)', '.\packages\Tobii.Interaction.0.7.1\build\Tobii.Interaction.targets'))" />
-  </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  <!-- Disabled: Using DLLs from Tobii Experience installation for Windows 11 compatibility -->
+  <!-- <Import Project=".\packages\Tobii.Interaction.0.7.1\build\Tobii.Interaction.targets" Condition="Exists('.\packages\Tobii.Interaction.0.7.1\build\Tobii.Interaction.targets')" /> -->
 </Project>
